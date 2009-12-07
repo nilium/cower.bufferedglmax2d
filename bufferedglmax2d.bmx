@@ -22,7 +22,7 @@ EndRem
 
 SuperStrict
 
-Module Cower.GLMax2D
+Module Cower.BufferedGLMax2D
 
 Import Brl.Max2D
 Import Brl.LinkedList
