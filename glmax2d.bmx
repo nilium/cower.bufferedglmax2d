@@ -109,24 +109,26 @@ Type TRenderState
 	Global _current:TRenderState
 	Global _texture2DEnabled:Int = False
 	Global _activeTexture:Int = 0
+	Global _atexSeq:Int = 0
 	Global _blendEnabled:Int = False
 	Global _alphaTestEnabled:Int = False
 	
 	Function SetTexture(tex%)
-		If tex = _activeTexture Then
+		If tex = _activeTexture And _atexSeq = GraphicsSeq Then
 			Return
 		EndIf
 		
 		If tex Then
-			If Not _texture2DEnabled Then
+			If Not _texture2DEnabled Or _atexSeq <> GraphicsSeq Then
 				glEnable(GL_TEXTURE_2D)
 				_texture2DEnabled = True
 			EndIf
 			glBindTexture(GL_TEXTURE_2D, tex)
-		ElseIf _texture2DEnabled Then
+		ElseIf _texture2DEnabled Or _atexSeq = GraphicsSeq Then
 			glDisable(GL_TEXTURE_2D)
 			_texture2DEnabled = False
 		EndIf
+		_atexSeq = GraphicsSeq
 		_activeTexture = tex
 	End Function
 	
@@ -148,8 +150,10 @@ Type TRenderState
 		_ed[_alphaTestEnabled] GL_ALPHA_TEST
 		_ed[_blendEnabled] GL_BLEND
 		_ed[_texture2DEnabled And _activeTexture] GL_TEXTURE_2D
-		If _texture2DEnabled And _activeTexture Then
+		If _atexSeq = GraphicsSeq And _texture2DEnabled And _activeTexture Then
 			glBindTexture(GL_TEXTURE_2D, _activeTexture)
+		Else
+			_activeTexture = 0
 		EndIf
 	End Function
 End Type
