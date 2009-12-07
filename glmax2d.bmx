@@ -27,6 +27,7 @@ Module Cower.GLMax2D
 Import Brl.Max2D
 Import Brl.LinkedList
 Import Brl.GLGraphics
+Import Pub.OpenGL
 Import Pub.Glew
 
 Private
