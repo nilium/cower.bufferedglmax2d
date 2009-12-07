@@ -217,11 +217,11 @@ Type TRenderBuffer
 		EndIf
 	End Method
  
-	Method AddPolygonEx(points:Double[], texcoords:Double[], colors:Byte[])
+	Method AddVerticesEx(points:Float[], texcoords:Float[], colors:Byte[])
 		Assert _lock=0 Else "Buffers are locked for rendering"
-		Assert colors.Length/4 = points.Length/2 And points.Length/2 = texcoords.Length/2 And ..
+		Assert colors.Length/4 = points.Length/3 And points.Length/3 = texcoords.Length/2 And ..
 			(points.Length Mod 2 = 0 And texcoords.Length Mod 2 = 0 And colors.Length Mod 4 = 0) ..
-			Else "Incorrect buffer sizes"
+			Else "Incorrect buffer sizes - buffers must describe the same number of vertices"
  
 		If _sets >= _arrindices.Length Then
 			_arrindices = _arrindices[.. _arrindices.Length*2]
@@ -233,8 +233,8 @@ Type TRenderBuffer
 		_arrindices[_sets] = _index
 		_arrcounts[_sets] = numIndices
  
-		_texcoordstream.WriteBytes(texcoords, texcoords.Length*8)
-		_vertstream.WriteBytes(points, points.Length*8)
+		_texcoordstream.WriteBytes(texcoords, texcoords.Length*4)
+		_vertstream.WriteBytes(points, points.Length*4)
 		_colorstream.WriteBytes(colors, colors.Length)
 		
 		_sets :+ 1
