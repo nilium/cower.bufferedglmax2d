@@ -351,8 +351,7 @@ End Type
 Public
 
 Type TGLBufferedImageFrame Extends TImageFrame
-	Field _name%, _gseq:Int, _texSize:Int, _w:Int, _h:Int
-	Field _uv:Float[8]
+	Field _name%, _gseq:Int, _texSize:Int, _w:Int, _h:Int, _right:Float, _top:Float
 	
 	Method New()
 		_gseq = GraphicsSeq
@@ -387,13 +386,8 @@ Type TGLBufferedImageFrame Extends TImageFrame
 		Wend
 		_texSize = size
 		
-		Local left# = Float(pixmap.width)/Float(size)
-		Local bottom# = Float(pixmap.height)/Float(size)
-		
-		_uv[2] = left
-		_uv[5] = bottom
-		_uv[6] = left
-		_uv[7] = bottom
+		_right# = Float(pixmap.width)/Float(size)
+		_top# = Float(pixmap.height)/Float(size)
 		
 		Local format% = GL_RGBA
 		Select pixmap.format
@@ -428,11 +422,19 @@ Type TGLBufferedImageFrame Extends TImageFrame
 		Return Self
 	End Method
 	
-	Method Draw(x0#, y0#, x1#, y1#, tx#, ty#)
+	Method Draw(x0#, y0#, x1#, y1#, tx#, ty#, sx#, sy#, sw#, sh#)
 		Assert _gseq = GraphicsSeq Else "Image no longer exists"
 		_activeDriver._buffer.SetTexture(_name)
 		_activeDriver._buffer.SetMode(GL_TRIANGLE_STRIP)
-		_activeDriver._buffer.AddVerticesEx(_activeDriver._rectPoints(x0,y0,x1,y1,tx,ty), _uv, _activeDriver._rectColor)
+		
+		Local u0#, u1#, v0#, v1#
+		u0 = (sx/Float(_w))*_right
+		u1 = ((sx+sw)/Float(_w))*_right
+		v0 = (sy/Float(_h))*_top
+		v1 = ((sy+sh)/Float(_h))*_top
+		
+		Local uv#[] = [u0,v0, u1,v0, u0,v1, u1,v1]
+		_activeDriver._buffer.AddVerticesEx(_activeDriver._rectPoints(x0,y0,x1,y1,tx,ty), uv, _activeDriver._rectColor)
 	End Method
 	
 	Method Delete()
