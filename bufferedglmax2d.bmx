@@ -144,8 +144,6 @@ Type TRenderState
 		EndIf
 		_current = Null
 		
-		state.Bind()
-		
 		' this is also evil
 		_ed[_alphaTestEnabled] GL_ALPHA_TEST
 		_ed[_blendEnabled] GL_BLEND
@@ -155,6 +153,8 @@ Type TRenderState
 		Else
 			_activeTexture = 0
 		EndIf
+		
+		state.Bind()
 	End Function
 End Type
 
