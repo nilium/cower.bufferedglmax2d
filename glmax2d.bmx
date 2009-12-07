@@ -61,18 +61,7 @@ Type TRenderState
 			Return
 		EndIf
 		
-		If Not _current Or textureName <> _current.textureName Then
-			If textureName = 0 And _texture2DEnabled Then
-				glDisable(GL_TEXTURE_2D)
-				_texture2DEnabled = False
-			Else
-				If Not _texture2DEnabled Then
-					glEnable(GL_TEXTURE_2D)
-					_texture2DEnabled = True
-				EndIf
-				glBindTexture(GL_TEXTURE_2D, textureName)
-			EndIf
-		EndIf
+		SetTexture(textureName)
 		
 		If Not _current Or blendDest <> _current.blendDest Or blendSource <> _current.blendSource Then
 			If blendDest = GL_ONE And blendDest = GL_ZERO And _blendEnabled Then
@@ -119,8 +108,27 @@ Type TRenderState
 	
 	Global _current:TRenderState
 	Global _texture2DEnabled:Int = False
+	Global _activeTexture:Int = 0
 	Global _blendEnabled:Int = False
 	Global _alphaTestEnabled:Int = False
+	
+	Function SetTexture(tex%)
+		If tex = _activeTexture Then
+			Return
+		EndIf
+		
+		If tex Then
+			If Not _texture2DEnabled Then
+				glEnable(GL_TEXTURE_2D)
+				_texture2DEnabled = True
+			EndIf
+			glBindTexture(GL_TEXTURE_2D, tex)
+		ElseIf _texture2DEnabled Then
+			glDisable(GL_TEXTURE_2D)
+			_texture2DEnabled = False
+		EndIf
+		_activeTexture = tex
+	End Function
 	
 	Function RestoreState(state:TRenderState=Null)
 		Global _ed(cap%)[] = [glDisable, glEnable] ' this is evil
