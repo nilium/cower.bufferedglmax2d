@@ -313,7 +313,17 @@ Type TRenderBuffer
 			
 			state.Bind()
 			
-			glMultiDrawArrays(state.renderMode, Varptr _arrindices[index.indexFrom], Varptr _arrcounts[index.indexFrom], index.indices)
+			If glMultiDrawArrays Then
+				If 1 < index.indices Then
+					glMultiDrawArrays(state.renderMode, Varptr _arrindices[index.indexFrom], Varptr _arrcounts[index.indexFrom], index.indices)
+				Else
+					glDrawArrays(state.renderMode, _arrindices[index.indexFrom], _arrcounts[index.indexFrom])
+				EndIf
+			Else
+				For Local i:Int = index.indexFrom Until index.indices
+					glDrawArrays(state.renderMode, _arrindices[i], _arrcounts[i])
+				Next
+			EndIf
 		Wend
 		
 		UnlockBuffers ' but sometimes we think we're safe
