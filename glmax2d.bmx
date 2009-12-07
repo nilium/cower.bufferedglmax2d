@@ -240,7 +240,7 @@ Type TRenderBuffer
 	Method AddVerticesEx(points:Float[], texcoords:Float[], colors:Byte[])
 		Assert _lock=0 Else "Buffers are locked for rendering"
 		Assert colors.Length/4 = points.Length/3 And points.Length/3 = texcoords.Length/2 And ..
-			(points.Length Mod 2 = 0 And texcoords.Length Mod 2 = 0 And colors.Length Mod 4 = 0) ..
+			(points.Length Mod 3 = 0 And texcoords.Length Mod 2 = 0 And colors.Length Mod 4 = 0) ..
 			Else "Incorrect buffer sizes - buffers must describe the same number of vertices"
  
 		If _sets >= _arrindices.Length Then
@@ -248,7 +248,7 @@ Type TRenderBuffer
 			_arrcounts = _arrcounts[.. _arrcounts.Length*2]
 		EndIf
  
-		Local numIndices:Int = points.Length/2
+		Local numIndices:Int = points.Length/3
 		
 		_arrindices[_sets] = _index
 		_arrcounts[_sets] = numIndices
