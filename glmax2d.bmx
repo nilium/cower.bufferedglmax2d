@@ -186,6 +186,10 @@ Type TRenderBuffer
 		_stateTop = New TRenderState
 		_renderStateStack = New TList
 		_renderStateStack.AddLast(_stateTop)
+		
+		_indexTop = New TRenderIndices
+		_renderIndexStack = New TList
+		_renderIndexStack.AddLast(_indexTop)
 	End Method
 	
 	' Add a new state/index 
@@ -308,13 +312,10 @@ Type TRenderBuffer
 			glMultiDrawArrays(state.renderMode, Varptr _arrindices[index.indexFrom], Varptr _arrcounts[index.indexFrom], index.indices)
 		Wend
 		
-		_stateTop = New TRenderState
-		_renderStateStack.Clear()
-		_renderStateStack.AddLast(_stateTop)
 		UnlockBuffers ' but sometimes we think we're safe
 	End Method
  
-	Method ResetBuffers()
+	Method Reset()
 		' make like nothing happened and equip a wig of charisma
 		Assert _lock = 0 Else "Buffers are locked for rendering"
 		_vertstream.Seek(0)
@@ -322,6 +323,14 @@ Type TRenderBuffer
 		_colorstream.Seek(0)
 		_index = 0
 		_sets = 0
+		
+		_stateTop = _stateTop.Clone()
+		_renderStateStack.Clear()
+		_renderStateStack.AddLast(_stateTop)
+		
+		_indexTop = New TRenderIndices
+		_renderIndexStack.Clear()
+		_renderIndexStack.AddLast(_indexTop)
 	End Method
 End Type
 
