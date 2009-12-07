@@ -134,17 +134,23 @@ Type TRenderState
 		Global _ed(cap%)[] = [glDisable, glEnable] ' this is evil
 		
 		If state = Null Then
-			state = _current
+			If _current Then
+				state = _current
+			Else
+				state = New TRenderState
+			EndIf
 		EndIf
 		_current = Null
-		Assert state Else "Cannot restore to a null state"
 		
 		state.Bind()
 		
 		' this is also evil
-		_ed[_alphaTestEnabled]	GL_ALPHA_TEST
-		_ed[_blendEnabled]		GL_BLEND
-		_ed[_texture2DEnabled]	GL_TEXTURE_2D
+		_ed[_alphaTestEnabled] GL_ALPHA_TEST
+		_ed[_blendEnabled] GL_BLEND
+		_ed[_texture2DEnabled And _activeTexture] GL_TEXTURE_2D
+		If _texture2DEnabled And _activeTexture Then
+			glBindTexture(GL_TEXTURE_2D, _activeTexture)
+		EndIf
 	End Function
 End Type
 
