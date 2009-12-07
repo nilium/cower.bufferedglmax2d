@@ -146,7 +146,6 @@ Type TRenderBuffer
 	Field _texcoordbuffer:TBank, _texcoordstream:TBankStream
 	Field _colorbuffer:TBank, _colorstream:TBankStream
 	Field _index:Int = 0, _sets%=0
-	Field _cr@=255,_cg@=255,_cb@=255,_ca@=255
 	Field _arrindices:Int[], _arrcounts:Int[]
 	Field _lock%=0
 	
@@ -244,34 +243,12 @@ Type TRenderBuffer
 		_index :+ numIndices
 		_indexTop.numIndices :+ numIndices
 	End Method
- 
-	Method AddRectangle(x!, y!, z!, w!, h!, u0!=0, v0!=0, u1!=1, v1!=1)
-		Local udif!=u1-u0
-		Local vdif!=v1-v0
-		AddPolygonEx([x,y,z, x+w,y,z, x+w,y+h,z, x,y+h,z], ..
-			[u0,v0,u0+udif,v0,u0+udif,v0+vdif,u0,v0+vdif], ..
-			[_cr,_cg,_cb,_ca,_cr,_cg,_cb,_ca,_cr,_cg,_cb,_ca,_cr,_cg,_cb,_ca])
-	End Method
- 
-	Method SetAutoColor(r%,g%,b%,a%)
-		_cr=r&$FF
-		_cg=g&$FF
-		_cb=b&$FF
-		_ca=a&$FF
-	End Method
- 
-	Method GetAutoColor(r% Var, g% Var, b% Var, a% Var)
-		r = _cr
-		g = _cg
-		b = _cb
-		a = _ca
-	End Method
- 
+	
 	Method LockBuffers()
 		If _lock = 0 Then
-			glVertexPointer(3, GL_DOUBLE, 0, _vertbuffer.Lock())
+			glVertexPointer(3, GL_FLOAT, 0, _vertbuffer.Lock())
 			glColorPointer(4, GL_UNSIGNED_BYTE, 0, _colorbuffer.Lock())
-			glTexCoordPointer(2, GL_DOUBLE, 0, _texcoordbuffer.Lock())
+			glTexCoordPointer(2, GL_FLOAT, 0, _texcoordbuffer.Lock())
 		EndIf
 		_lock :+ 1
 	End Method
