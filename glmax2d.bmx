@@ -348,4 +348,99 @@ Type TRenderBuffer
 	End Method
 End Type
 
-' TODO: driver
+Public
+
+Type TGLBufferedImageFrame Extends TImageFrame
+	Field _name%, _gseq:Int, _texSize:Int, _w:Int, _h:Int
+	Field _uv:Float[8]
+	
+	Method New()
+		_gseq = GraphicsSeq
+	End Method
+	
+	Method InitWithPixmap:TGLBufferedImageFrame(pixmap:TPixmap, flags:Int)
+		_w = pixmap.width
+		_h = pixmap.height
+		
+		glGenTextures(1, Varptr _name)
+		TRenderState.SetTexture(_name)
+		
+		Local magFilter% = GL_NEAREST
+		Local minFilter% = GL_NEAREST
+		If flags&FILTEREDIMAGE Then
+			magFilter = GL_LINEAR
+			If flags&MIPMAPPEDIMAGE Then
+				minFilter = GL_LINEAR_MIPMAP_LINEAR
+			Else
+				minFilter = GL_LINEAR
+			EndIf
+		ElseIf flags&MIPMAPPEDIMAGE Then
+			minFilter = GL_NEAREST_MIPMAP_NEAREST
+		EndIf
+		
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter)
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter)
+		
+		Local size%=%1, maxSize% = Max(pixmap.width, pixmap.height)
+		While size < maxsize
+			size :Shl 1
+		Wend
+		_texSize = size
+		
+		Local left# = Float(pixmap.width)/Float(size)
+		Local bottom# = Float(pixmap.height)/Float(size)
+		
+		_uv[2] = left
+		_uv[5] = bottom
+		_uv[6] = left
+		_uv[7] = bottom
+		
+		Local format% = GL_RGBA
+		Select pixmap.format
+			Case PF_A8 ; format = GL_ALPHA8
+			Case PF_I8 ; format = GL_LUMINANCE8
+			Case PF_RGB888 ; format = GL_RGB
+			Case PF_BGR888 ; format = GL_BGR
+'			Case PF_RGBA8888 ; format = GL_RGBA 'default
+			Case PF_BGRA8888 ; format = GL_BGRA
+		End Select
+		
+		Local level:Int = 0
+		Repeat
+			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA8, size, size, 0, format, GL_UNSIGNED_BYTE, Null)
+			If size = 1 Then Exit
+			level :+ 1
+			size :/ 2
+		Forever
+		
+		size = _texSize
+		level = 0
+		Repeat
+			glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, pixmap.width, pixmap.height, format, GL_UNSIGNED_BYTE, pixmap.pixels)
+			Local err%=glGetError();Assert err=GL_NO_ERROR Else err
+			If Not (flags&MIPMAPPEDIMAGE) Then Exit
+			If size = 1 Then Exit
+			level :+ 1
+			size :/ 2
+			pixmap = ResizePixmap(pixmap, pixmap.width/2 Or 1, pixmap.height/2 Or 1)
+		Forever
+		
+		Return Self
+	End Method
+	
+	Method Draw(x0#, y0#, x1#, y1#, tx#, ty#)
+		Assert _gseq = GraphicsSeq Else "Image no longer exists"
+		_activeDriver._buffer.SetTexture(_name)
+		_activeDriver._buffer.SetMode(GL_TRIANGLE_STRIP)
+		_activeDriver._buffer.AddVerticesEx(_activeDriver._rectPoints(x0,y0,x1,y1,tx,ty), _uv, _activeDriver._rectColor)
+	End Method
+	
+	Method Delete()
+		If _gseq = GraphicsSeq Then
+			glDeleteTextures(1, Varptr _name)
+		EndIf
+		_name = 0
+		_gseq = 0
+	End Method
+End Type
+
