@@ -41,12 +41,6 @@ Type TRenderIndices
 	Field indexFrom:Int = 0
 	Field indices:Int = 0
 	Field numIndices:Int = 0
-	
-	Method Clone:TRenderIndices()
-		Local c:TRenderIndices = New TRenderIndices
-		MemCopy(Varptr c.indexFrom, Varptr indexFrom, SizeOf(TRenderState))
-		Return c
-	End Method
 End Type
 
 Type TRenderState
@@ -177,10 +171,8 @@ Type TRenderBuffer
 	' Add a new state/index 
 	Method _newState()
 		If _indexTop.indices Then
-			_indexTop = _indexTop.Clone()
-			_indexTop.indexFrom :+ _indexTop.indices
-			_indexTop.indices = 0
-			_indexTop.numIndices = 0
+			_indexTop = New TRenderIndices
+			_indexTop.indexFrom = _sets
 			_renderIndexStack.AddLast(_indexTop)
 			
 			_stateTop = _stateTop.Clone()
