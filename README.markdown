@@ -1,15 +1,16 @@
 Cower.GLMax2D
+===================================================================================================
+
+About
 ---------------------------------------------------------------------------------------------------
-
-### Intro #########################################################################################
-
 This is an open-source implementation of the GLMax2D driver that approaches implementing the renderer using vertex arrays rather than using glBegin/glVertex/glEnd for all rendering.
 
 Not a whole lot to see right now, so unless you want to hack on the code yourself, you should probably just pass it by.  There are currently a number of things that need to be done, including making sure the code actually works.
 
 If you're up for breaking the code or contributing to it, go nuts.  If you want to steal the code, go nuts.  If you want to demand its completion for God knows what reason, go nuts.
 
-### License #######################################################################################
+License
+---------------------------------------------------------------------------------------------------
 
 	Cower.GLMax2D is copyright (c) 2009 Noel R. Cower
 	
