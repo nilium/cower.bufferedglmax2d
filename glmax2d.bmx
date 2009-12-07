@@ -54,6 +54,8 @@ Type TRenderState
 	Field alphaFunc:Int = GL_ALWAYS
 	Field alphaRef:Float = 0 'GLclampf
 	
+	Field lineWidth:Float = 1
+	
 	Method Bind()
 		If _current = Self Then
 			Return
@@ -98,7 +100,11 @@ Type TRenderState
 			EndIf
 		EndIf
 		
-		_current = Self
+		If renderMode = GL_LINES And FloatsDiffer(lineWidth, _current.lineWidth) Then
+			glLineWidth(lineWidth)
+		EndIf
+		
+		_current = Clone()
 	End Method
 	
 	Method Restore()
@@ -207,6 +213,13 @@ Type TRenderBuffer
 			_newState()
 			_stateTop.alphaFunc = func
 			_stateTop.alphaRef = ref
+		EndIf
+	End Method
+	
+	Method SetLineWidth(width#)
+		If FloatsDiffer(_stateTop.lineWidth, width) Then
+			_newState()
+			_stateTop.lineWidth = width
 		EndIf
 	End Method
  
