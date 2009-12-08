@@ -133,8 +133,6 @@ Type TRenderState
 	End Function
 	
 	Function RestoreState(state:TRenderState=Null)
-		Global _ed(cap%)[] = [glDisable, glEnable] ' this is evil
-		
 		If state = Null Then
 			If _current Then
 				state = _current
@@ -144,10 +142,24 @@ Type TRenderState
 		EndIf
 		_current = Null
 		
-		' this is also evil
-		_ed[_alphaTestEnabled] GL_ALPHA_TEST
-		_ed[_blendEnabled] GL_BLEND
-		_ed[_texture2DEnabled And _activeTexture] GL_TEXTURE_2D
+		If _alphaTestEnabled Then
+			glEnable(GL_ALPHA_TEST)
+		Else
+			glDisable(GL_ALPHA_TEST)
+		EndIf
+		
+		If _blendEnabled Then
+			glEnable(GL_BLEND)
+		Else
+			glDisable(GL_BLEND)
+		EndIf
+		
+		If _texture2DEnabled And _activeTexture Then
+			glEnable(GL_TEXTURE_2D)
+		Else
+			glDisable(GL_TEXTURE_2D)
+		EndIf
+		
 		If _atexSeq = GraphicsSeq And _texture2DEnabled And _activeTexture Then
 			glBindTexture(GL_TEXTURE_2D, _activeTexture)
 		Else
