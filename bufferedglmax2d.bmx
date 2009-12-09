@@ -103,6 +103,7 @@ Type TGLBufferedImageFrame Extends TImageFrame
 		Return Self
 	End Method
 	
+	Field uv:Float[8]
 	Method Draw(x0#, y0#, x1#, y1#, tx#, ty#, sx#, sy#, sw#, sh#)
 		Assert _gseq = GraphicsSeq Else "Image no longer exists"
 		_activeDriver._buffer.SetTexture(_name)
@@ -114,8 +115,15 @@ Type TGLBufferedImageFrame Extends TImageFrame
 		v0 = (sy/Float(_h))*_top
 		v1 = ((sy+sh)/Float(_h))*_top
 		
-		Local uv#[] = [u0,v0, u1,v0, u0,v1, u1,v1]
-		_activeDriver._buffer.AddVerticesEx(_activeDriver._rectPoints(x0,y0,x1,y1,tx,ty), uv, _activeDriver._rectColor)
+		uv[0]=u0
+		uv[1]=v0
+		uv[2]=u1
+		uv[3]=v0
+		uv[4]=u0
+		uv[5]=v1
+		uv[6]=u1
+		uv[7]=v1
+		_activeDriver._buffer.AddVerticesEx(4, _activeDriver._rectPoints(x0,y0,x1,y1,tx,ty), uv, _activeDriver._poly_colors)
 	End Method
 	
 	Method Delete()
@@ -167,19 +175,24 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		Local y1xy:Float = y1*_txy
 		Local y1yy:Float = y1*_tyy
 		
-		Return [x0xx + y0xy + tx, x0yx + y0yy + ty, 0#, ..
-				x1xx + y0xy + tx, x1yx + y0yy + ty, 0#, ..
-				x0xx + y1xy + tx, x0yx + y1yy + ty, 0#, ..
-				x1xx + y1xy + tx, x1yx + y1yy + ty, 0# ]
+		_poly_xyz[0] = x0xx + y0xy + tx
+		_poly_xyz[1] = x0yx + y0yy + ty
+		_poly_xyz[3] = x1xx + y0xy + tx
+		_poly_xyz[4] = x1yx + y0yy + ty
+		_poly_xyz[6] = x0xx + y1xy + tx
+		_poly_xyz[7] = x0yx + y1yy + ty
+		_poly_xyz[9] = x1xx + y1xy + tx
+		_poly_xyz[10] = x1yx + y1yy + ty
+		
+		Return _poly_xyz
 	End Method
 	
 	Method _drawRect(x0#, y0#, x1#, y1#, tx#, ty#)
-		Global _rectUV:Float[8]
 		_buffer.SetMode(GL_TRIANGLE_STRIP)
-		_buffer.AddVerticesEx( ..
+		_buffer.AddVerticesEx( 4, ..
 			_rectPoints(x0,y0,x1,y1,tx,ty), ..
-			_rectUV, ..
-			_rectColor )
+			Null, ..
+			_poly_colors )
 	End Method
 	
 	' TGraphicsDriver
@@ -256,20 +269,20 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	
 	Method SetAlpha(alpha#)
 		_ca=Int(alpha*255)&$FF
-		_rectColor[3]=_ca;_rectColor[7]=_ca;_rectColor[11]=_ca;_rectColor[15]=_ca;
-		_lineColor[3]=_ca;_lineColor[7]=_ca;_plotColor[3]=_ca
+		For Local i:Int = 0 Until _poly_colors.Length Step 4
+			_poly_colors[i+3] = _ca
+		Next
 	End Method
 	
 	Method SetColor(r%, g%, b%)
 		_cr=r&$FF
 		_cg=g&$FF
 		_cb=b&$FF
-		_rectColor[0]=_cr;_rectColor[4]=_cr;_rectColor[8]=_cr;_rectColor[12]=_cr;
-		_lineColor[0]=_cr;_lineColor[4]=_cr;_plotColor[0]=_cr
-		_rectColor[1]=_cg;_rectColor[5]=_cg;_rectColor[9]=_cg;_rectColor[13]=_cg;
-		_lineColor[1]=_cg;_lineColor[5]=_cg;_plotColor[1]=_cg
-		_rectColor[2]=_cb;_rectColor[6]=_cb;_rectColor[10]=_cb;_rectColor[14]=_cb;
-		_lineColor[2]=_cb;_lineColor[6]=_cb;_plotColor[2]=_cb
+		For Local i:Int = 0 Until _poly_colors.Length Step 4
+			_poly_colors[i] = _cr
+			_poly_colors[i+1] = _cg
+			_poly_colors[i+2] = _cb
+		Next
 	End Method
 	
 	Method SetClsColor(r%, g%, b%)
@@ -294,27 +307,27 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 	End Method
 	
-	Field _plotColor:Byte[]=[255:Byte,255:Byte,255:Byte,255:Byte]
 	Method Plot(x#, y#)
-		Global _plotUV:Float[2]'garbage
 		_buffer.SetTexture(0)
 		_buffer.SetMode(GL_POINTS)
-		_buffer.AddVerticesEx([x, y, 0#], _plotUV, _plotColor)
+		_poly_xyz[0] = x
+		_poly_xyz[1] = y
+		_poly_xyz[2] = 0
+		_buffer.AddVerticesEx(1, _poly_xyz, Null, _poly_colors)
 	End Method
 	
-	Field _lineColor:Byte[]=[255:Byte,255:Byte,255:Byte,255:Byte,255:Byte,255:Byte,255:Byte,255:Byte]
 	Method DrawLine(x0#, y0#, x1#, y1#, tx#, ty#)
-		Global _lineUV:Float[4]'garbage
 		_buffer.SetTexture(0)
 		_buffer.SetMode(GL_LINES)
-		_buffer.AddVerticesEx(..
-			[	x0*_txx+y0*_txy+tx+.5, x0*_tyx+y0*_tyy-1+ty+.5, 0#, ..
-				x1*_txx+y1*_txy+tx+.5, x1*_tyx+y1*_tyy-1+ty+.5, 0#], ..
-				_lineUV, _lineColor)
+		_poly_xyz[0] = x0*_txx+y0*_txy+tx+.5
+		_poly_xyz[1] = x0*_tyx+y0*_tyy-1+ty+.5
+		_poly_xyz[2] = 0
+		_poly_xyz[0] = x1*_txx+y1*_txy+tx+.5
+		_poly_xyz[1] = x1*_tyx+y1*_tyy-1+ty+.5
+		_poly_xyz[2] = 0
+		_buffer.AddVerticesEx(2, _poly_xyz, Null, _poly_colors)
 	End Method
 	
-	Field _rectColor:Byte[]=[255:Byte,255:Byte,255:Byte,255:Byte, 255:Byte,255:Byte,255:Byte,255:Byte,..
-							255:Byte,255:Byte,255:Byte,255:Byte, 255:Byte,255:Byte,255:Byte,255:Byte]
 	Method DrawRect(x0#, y0#, x1#, y1#, tx#, ty#)
 		_buffer.SetTexture(0)
 		_drawRect(x0,y0,x1,y1,tx,ty)
@@ -324,12 +337,13 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		RuntimeError("Not implemented")
 	End Method
 	
+	Field _poly_xyz#[36]
+	Field _poly_colors:Byte[36]
 	Method DrawPoly(xy#[], handlex#, handley#, originx#, originy#)
 		_buffer.SetTexture(0)
 		_buffer.SetMode(GL_POLYGON)
 		
-		Local xyz#[xy.Length/2*3]
-		Local colors:Byte[xy.Length*2]
+		If _poly_xyz.Length/3 < xy.Length/2 Then _poly_xyz = New Float[Min(xy.Length/2,12)*3]
 		For Local i:Int = 0 Until xy.Length Step 2
 			Local ti:Int = (i/2)*3
 			Local x#,y#
@@ -341,16 +355,11 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 			x = (x * _txx) + (y * _txy) + originx
 			y = (x * _tyx) + (y * _tyy) + originy
 			
-			xyz[ti] = x
-			xyz[ti+1] = y
-			
-			ti = i*2
-			colors[ti] = _cr
-			colors[ti+1] = _cg
-			colors[ti+2] = _cb
-			colors[ti+3] = _ca
+			_poly_xyz[ti] = x
+			_poly_xyz[ti+1] = y
+			_poly_xyz[ti+2] = 0
 		Next
-		_buffer.AddVerticesEx(xyz, xy, colors)
+		_buffer.AddVerticesEx(xy.Length, _poly_xyz, Null, _poly_colors)
 	End Method
 		
 	Method DrawPixmap(pixmap:TPixmap, x%, y%)
@@ -377,7 +386,6 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		glOrtho(0, width, height, 0, -32, 32)
 		glMatrixMode(GL_MODELVIEW)
 		glLoadIdentity()
-'		RuntimeError("Not implemented")
 	End Method
 	
 	Method ToString$()
