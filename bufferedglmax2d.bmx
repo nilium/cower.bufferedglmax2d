@@ -322,9 +322,9 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		_poly_xyz[0] = x0*_txx+y0*_txy+tx+.5
 		_poly_xyz[1] = x0*_tyx+y0*_tyy-1+ty+.5
 		_poly_xyz[2] = 0
-		_poly_xyz[0] = x1*_txx+y1*_txy+tx+.5
-		_poly_xyz[1] = x1*_tyx+y1*_tyy-1+ty+.5
-		_poly_xyz[2] = 0
+		_poly_xyz[3] = x1*_txx+y1*_txy+tx+.5
+		_poly_xyz[4] = x1*_tyx+y1*_tyy-1+ty+.5
+		_poly_xyz[5] = 0
 		_buffer.AddVerticesEx(2, _poly_xyz, Null, _poly_colors)
 	End Method
 	
