@@ -228,6 +228,12 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	Method CreateFrameFromPixmap:TImageFrame(pixmap:TPixmap, flags%)
 		Local maxtexsize%
 		glGetIntegerv(GL_MAX_TEXTURE_SIZE, Varptr maxtexsize)
+		If maxtexsize < MinimumTextureWidth Then
+			MinimumTextureWidth = maxtexsize
+		EndIf
+		If maxtexsize < MinimumTextureHeight Then
+			MinimumTextureHeight = maxtexsize
+		EndIf
 		
 		If maxtexsize <= Max(pixmap.width, pixmap.height) Then
 			Local resize# = Float(maxtexsize)/Max(pixmap.width, pixmap.height)
