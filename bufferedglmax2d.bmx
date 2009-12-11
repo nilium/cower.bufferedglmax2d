@@ -31,74 +31,40 @@ Import Cower.RenderBuffer
 
 Public
 
+Include "texturepack.bmx"
+
+Private
+
+Function PowerOfTwoFor%(i%)
+	Local r% = %1
+	While r<i ; r :Shl 1 ; Wend
+	Return r
+End Function
+
+Function GLFormatForPixmap%(pixmap:TPixmap)
+	Select pixmap.format
+		Case PF_A8			Return GL_ALPHA8
+		Case PF_I8			Return GL_LUMINANCE8
+		Case PF_RGB888		Return GL_RGB
+		Case PF_BGR888		Return GL_BGR
+		Case PF_BGRA8888	Return GL_BGRA
+		Default 			Return GL_RGBA
+	End Select
+End Function
+
+Public
+
 Type TGLBufferedImageFrame Extends TImageFrame
-	Field _name%, _gseq:Int, _texSize:Int, _w:Int, _h:Int, _right:Float, _top:Float
+	Field _gseq:Int
+	Field _texture:TGLPackedTexture
 	
 	Method New()
-		_gseq = GraphicsSeq
 	End Method
 	
-	Method InitWithPixmap:TGLBufferedImageFrame(pixmap:TPixmap, flags:Int)
-		_w = pixmap.width
-		_h = pixmap.height
-		
-		glGenTextures(1, Varptr _name)
-		TRenderState.SetTexture(_name)
-		
-		Local magFilter% = GL_NEAREST
-		Local minFilter% = GL_NEAREST
-		If flags&FILTEREDIMAGE Then
-			magFilter = GL_LINEAR
-			If flags&MIPMAPPEDIMAGE Then
-				minFilter = GL_LINEAR_MIPMAP_LINEAR
-			Else
-				minFilter = GL_LINEAR
-			EndIf
-		ElseIf flags&MIPMAPPEDIMAGE Then
-			minFilter = GL_NEAREST_MIPMAP_NEAREST
-		EndIf
-		
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter)
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter)
-		
-		Local size%=%1, maxSize% = Max(pixmap.width, pixmap.height)
-		While size < maxsize
-			size :Shl 1
-		Wend
-		_texSize = size
-		
-		_right# = Float(pixmap.width)/Float(size)
-		_top# = Float(pixmap.height)/Float(size)
-		
-		Local format% = GL_RGBA
-		Select pixmap.format
-			Case PF_A8 ; format = GL_ALPHA8
-			Case PF_I8 ; format = GL_LUMINANCE8
-			Case PF_RGB888 ; format = GL_RGB
-			Case PF_BGR888 ; format = GL_BGR
-'			Case PF_RGBA8888 ; format = GL_RGBA 'default
-			Case PF_BGRA8888 ; format = GL_BGRA
-		End Select
-		
-		Local level:Int = 0
-		Repeat
-			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA8, size, size, 0, format, GL_UNSIGNED_BYTE, Null)
-			If size = 1 Then Exit
-			level :+ 1
-			size :/ 2
-		Forever
-		
-		size = _texSize
-		level = 0
-		Repeat
-			glTexSubImage2D(GL_TEXTURE_2D, level, 0, 0, pixmap.width, pixmap.height, format, GL_UNSIGNED_BYTE, pixmap.pixels)
-			Local err%=glGetError();Assert err=GL_NO_ERROR Else err
-			If Not (flags&MIPMAPPEDIMAGE) Then Exit
-			If size = 1 Then Exit
-			level :+ 1
-			size :/ 2
-			pixmap = ResizePixmap(pixmap, pixmap.width/2 Or 1, pixmap.height/2 Or 1)
-		Forever
+	Method Init:TGLBufferedImageFrame(buffer:TGLPackedTexture)
+		Assert buffer Else "No buffer provided"
+		_gseq = GraphicsSeq
+		_texture = buffer
 		
 		Return Self
 	End Method
@@ -106,32 +72,41 @@ Type TGLBufferedImageFrame Extends TImageFrame
 	Field uv:Float[8]
 	Method Draw(x0#, y0#, x1#, y1#, tx#, ty#, sx#, sy#, sw#, sh#)
 		Assert _gseq = GraphicsSeq Else "Image no longer exists"
-		_activeDriver._buffer.SetTexture(_name)
+		
+		_activeDriver._buffer.SetTexture(_texture.Name())
 		_activeDriver._buffer.SetMode(GL_TRIANGLE_STRIP)
 		
-		Local u0#, u1#, v0#, v1#
-		u0 = (sx/Float(_w))*_right
-		u1 = ((sx+sw)/Float(_w))*_right
-		v0 = (sy/Float(_h))*_top
-		v1 = ((sy+sh)/Float(_h))*_top
+		If sx <> 0 Or sy <> 0 Or sw <> _texture._pwidth Or sh <> _texture._pheight Then
+			Local u0#, u1#, v0#, v1#
+			u0 = _texture._u0 + sx*_texture._owner._wscale
+			u1 = u0 + sw*_texture._owner._wscale
+			v0 = _texture._v0 + sy*_texture._owner._hscale
+			v1 = v0 + sh*_texture._owner._hscale
 		
-		uv[0]=u0
-		uv[1]=v0
-		uv[2]=u1
-		uv[3]=v0
-		uv[4]=u0
-		uv[5]=v1
-		uv[6]=u1
-		uv[7]=v1
+			uv[0]=u0
+			uv[1]=v0
+			uv[2]=u1
+			uv[3]=v0
+			uv[4]=u0
+			uv[5]=v1
+			uv[6]=u1
+			uv[7]=v1
+		Else
+			uv[0]=_texture._u0
+			uv[1]=_texture._v0
+			uv[2]=_texture._u1
+			uv[3]=_texture._v0
+			uv[4]=_texture._u0
+			uv[5]=_texture._v1
+			uv[6]=_texture._u1
+			uv[7]=_texture._v1
+		EndIf
 		_activeDriver._buffer.AddVerticesEx(4, _activeDriver._rectPoints(x0,y0,x1,y1,tx,ty), uv, _activeDriver._poly_colors)
 	End Method
 	
 	Method Delete()
-		If _gseq = GraphicsSeq Then
-			glDeleteTextures(1, Varptr _name)
-		EndIf
-		_name = 0
 		_gseq = 0
+		If _texture Then _texture.Unload()
 	End Method
 End Type
 
@@ -144,6 +119,9 @@ Global _activeDriver:TBufferedGLMax2DDriver = Null
 Public
 
 Type TBufferedGLMax2DDriver Extends TMax2DDriver
+	Global MinimumTextureWidth%=1024
+	Global MinimumTextureHeight%=1024
+	
 	Field _buffer:TRenderBuffer = New TRenderBuffer
 	Field _cr@, _cg@, _cb@, _ca@
 	
@@ -161,6 +139,9 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY)
 		TRenderState.RestoreState(Null)
 		SetResolution(_r_width, _r_height)
+		For Local i:Int = 0 Until _texPackages.Length
+			_texPackages[i] = null
+		Next
 	End Method
 	
 	Method _rectPoints:Float[](x0#, y0#, x1#, y1#, tx#, ty#)
@@ -241,8 +222,44 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	
 	' TMax2DDriver
 	
+	Field _texPackages:TGLTexturePack[16]
+	Field _numPackages:Int = 0
+	
 	Method CreateFrameFromPixmap:TImageFrame(pixmap:TPixmap, flags%)
-		Return New TGLBufferedImageFrame.InitWithPixmap(pixmap, flags)
+		Local maxtexsize%
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, Varptr maxtexsize)
+		
+		If maxtexsize <= Max(pixmap.width, pixmap.height) Then
+			Local resize# = Float(maxtexsize)/Max(pixmap.width, pixmap.height)
+			pixmap = ResizePixmap(pixmap, pixmap.width*resize, pixmap.height*resize)
+		EndIf
+		
+		Local pw% = PowerOfTwoFor(pixmap.width)
+		Local ph% = PowerOfTwoFor(pixmap.height)
+'		DebugStop
+		
+		Local buffer:TGLPackedTexture
+		For Local i:Int = 0 Until _numPackages
+			If Not _texPackages[i] Then Exit
+			If _texPackages[i]._flags = flags Then
+				buffer = _texPackages[i].GetUnused(pixmap.width, pixmap.height)
+			EndIf
+		Next
+		
+		If buffer = Null Then
+			If _numPackages = _texPackages.Length Then
+				_texPackages = _texPackages[.._texPackages.Length*2]
+			EndIf
+			
+			_texPackages[_numPackages] = New TGLTexturePack.Init(Max(pw, MinimumTextureWidth), Max(ph, MinimumTextureHeight), flags)
+			buffer = _texPackages[_numPackages].GetUnused(pw, ph)
+			_numPackages :+ 1
+		EndIf
+		
+		Assert buffer Else "Failed to create buffer for image"
+		buffer.Buffer(pixmap)
+				
+		Return New TGLBufferedImageFrame.Init(buffer)
 	End Method
 	
 	Method SetBlend(blend%)
@@ -304,7 +321,7 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	End Method
 	
 	Method Cls()
-		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+		glClear(GL_COLOR_BUFFER_BIT)'|GL_DEPTH_BUFFER_BIT)
 	End Method
 	
 	Method Plot(x#, y#)
@@ -388,11 +405,11 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		glLoadIdentity()
 	End Method
 	
-	Method ToString$()
+	Method ToString$() NoDebug
 		Return "OpenGL (Buffered)"
 	End Method
 	
-	Method RenderBuffer:TRenderBuffer()
+	Method RenderBuffer:TRenderBuffer() NoDebug
 		Return _buffer
 	End Method
 End Type
