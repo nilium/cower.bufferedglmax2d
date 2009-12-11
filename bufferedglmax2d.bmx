@@ -144,7 +144,7 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		Next
 	End Method
 	
-	Method _rectPoints:Float[](x0#, y0#, x1#, y1#, tx#, ty#)
+	Method _rectPoints:Float[](x0#, y0#, x1#, y1#, tx#, ty#) NoDebug
 		' Saves on 8 multiplications, which isn't really a big deal, but the code is cleaner for it.
 		Local x0xx:Float = x0*_txx
 		Local x0yx:Float = x0*_tyx
@@ -178,7 +178,7 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	
 	' TGraphicsDriver
 	
-	Method GraphicsModes:TGraphicsMode[]()
+	Method GraphicsModes:TGraphicsMode[]() NoDebug
 		Return GLGraphicsDriver().GraphicsModes()
 	End Method
 	
@@ -290,14 +290,14 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		End Select
 	End Method
 	
-	Method SetAlpha(alpha#)
+	Method SetAlpha(alpha#) NoDebug
 		_ca=Int(alpha*255)&$FF
 		For Local i:Int = 0 Until _poly_colors.Length Step 4
 			_poly_colors[i+3] = _ca
 		Next
 	End Method
 	
-	Method SetColor(r%, g%, b%)
+	Method SetColor(r%, g%, b%) NoDebug
 		_cr=r&$FF
 		_cg=g&$FF
 		_cb=b&$FF
@@ -315,7 +315,7 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	Method SetViewport(x%, y%, w%, h%)
 	End Method
 	
-	Method SetTransform(xx#, xy#, yx#, yy#)
+	Method SetTransform(xx#, xy#, yx#, yy#) NoDebug
 		_txx = xx
 		_txy = xy
 		_tyx = yx
