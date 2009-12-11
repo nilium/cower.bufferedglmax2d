@@ -168,14 +168,6 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		Return _poly_xyz
 	End Method
 	
-	Method _drawRect(x0#, y0#, x1#, y1#, tx#, ty#)
-		_buffer.SetMode(GL_TRIANGLE_STRIP)
-		_buffer.AddVerticesEx( 4, ..
-			_rectPoints(x0,y0,x1,y1,tx,ty), ..
-			Null, ..
-			_poly_colors )
-	End Method
-	
 	' TGraphicsDriver
 	
 	Method GraphicsModes:TGraphicsMode[]() NoDebug
@@ -353,7 +345,11 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	
 	Method DrawRect(x0#, y0#, x1#, y1#, tx#, ty#)
 		_buffer.SetTexture(0)
-		_drawRect(x0,y0,x1,y1,tx,ty)
+		_buffer.SetMode(GL_TRIANGLE_STRIP)
+		_buffer.AddVerticesEx( 4, ..
+			_rectPoints(x0,y0,x1,y1,tx,ty), ..
+			Null, ..
+			_poly_colors )
 	End Method
 	
 	Method DrawOval(x0#, y0#, x1#, y1#, tx#, ty#)
