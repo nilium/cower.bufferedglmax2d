@@ -239,7 +239,6 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		' other images
 		Local pw% = PowerOfTwoFor(pixmap.width+4)
 		Local ph% = PowerOfTwoFor(pixmap.height+4)
-'		DebugStop
 		
 		Local buffer:TGLPackedTexture
 		For Local i:Int = 0 Until _numPackages
