@@ -233,7 +233,7 @@ Type TGLTexturePack
 		glGenTextures(1, Varptr _name)
 		TRenderState.SetTexture(_name)
 		
-		glTexImage2D(GL_PROXY_TEXTURE_2D, 0, GL_RGBA8, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Null)
+		glTexImage2D(GL_PROXY_TEXTURE_2D, 0, GL_RGBA8, _width, _height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, Null)
 		Local proxyw:Int = 0
 		glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, Varptr proxyw)
 		If proxyw = 0 Then
@@ -259,14 +259,16 @@ Type TGLTexturePack
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter)
 		
+		Local blankmem:Byte Ptr = MemAlloc(width*height)'hack
 		Local level:Int = 0
 		Repeat
-			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Null)
+			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA8, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, blankmem)
 			If width = 1 And height = 1 Then Exit
 			level :+ 1
 			width  = width/2 Or 1
 			height = height/2 Or 1
 		Forever
+		MemFree(blankmem)
 	End Method
 	
 	Method Init:TGLTexturePack(width%, height%, flags%)
