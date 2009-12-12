@@ -227,13 +227,18 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 			MinimumTextureHeight = maxtexsize
 		EndIf
 		
-		If maxtexsize <= Max(pixmap.width, pixmap.height) Then
-			Local resize# = Float(maxtexsize)/Max(pixmap.width, pixmap.height)
-			pixmap = ResizePixmap(pixmap, pixmap.width*resize, pixmap.height*resize)
+		If maxtexsize <= Max(pixmap.width+4, pixmap.height+4) Then
+			Local resize# = Float(maxtexsize)/Max(pixmap.width, pixmap.height)+4
+			pixmap = ResizePixmap(pixmap, (pixmap.width+4)*resize, (pixmap.height+4)*resize)
 		EndIf
 		
-		Local pw% = PowerOfTwoFor(pixmap.width)
-		Local ph% = PowerOfTwoFor(pixmap.height)
+		' images get 4 pixels worth of padding
+		' upside: tends to remove any sort of bleeding between textures
+		' downside: this can make a 1024x1024 image require the allocation of a 2048x2048 image,
+		' but this is mitigated by the fact that the remainder of that texture can still be used for
+		' other images
+		Local pw% = PowerOfTwoFor(pixmap.width+4)
+		Local ph% = PowerOfTwoFor(pixmap.height+4)
 '		DebugStop
 		
 		Local buffer:TGLPackedTexture
@@ -250,7 +255,7 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 			EndIf
 			
 			_texPackages[_numPackages] = New TGLTexturePack.Init(Max(pw, MinimumTextureWidth), Max(ph, MinimumTextureHeight), flags)
-			buffer = _texPackages[_numPackages].GetUnused(pw, ph)
+			buffer = _texPackages[_numPackages].GetUnused(pixmap.width+4, pixmap.height+4)
 			_numPackages :+ 1
 		EndIf
 		
