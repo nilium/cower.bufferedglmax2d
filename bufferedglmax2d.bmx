@@ -289,16 +289,16 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	Method SetAlpha(alpha#) NoDebug
 		'haaaaaack (to make sure that if you specify a value greater than 1, unlike if you passed
 		' 2 and you would end up with some odd value between 0 and 1)
-		_ca=Int Min(Max(alpha, 0), 1)*255
+		_ca=Min(Max(alpha, 0), 1)*255
 		For Local i:Int = 0 Until _poly_colors.Length Step 4
 			_poly_colors[i+3] = _ca
 		Next
 	End Method
 	
 	Method SetColor(r%, g%, b%) NoDebug
-		_cr=Int Min(Max(r, 0), 255) 'haaaaaaaaaaaaaaaaaaaaaaaaack, same as above
-		_cg=Int Min(Max(g, 0), 255)
-		_cb=Int Min(Max(b, 0), 255)
+		_cr=Min(Max(r, 0), 255) 'haaaaaaaaaaaaaaaaaaaaaaaaack, same as above
+		_cg=Min(Max(g, 0), 255)
+		_cb=Min(Max(b, 0), 255)
 		For Local i:Int = 0 Until _poly_colors.Length Step 4
 			_poly_colors[i] = _cr
 			_poly_colors[i+1] = _cg
