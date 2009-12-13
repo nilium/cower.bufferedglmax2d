@@ -395,7 +395,10 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		_buffer.SetTexture(0)
 		_buffer.SetMode(GL_POLYGON)
 		
-		If _poly_xyz.Length/3 < xy.Length/2 Then _poly_xyz = New Float[Min(xy.Length/2,12)*3]
+		If _poly_xyz.Length/3 < xy.Length/2 Then
+			_poly_xyz = New Float[Min(xy.Length/2,12)*3]
+			_poly_colors = New Byte[Min(xy.Length,24)*2]
+		EndIf
 		For Local i:Int = 0 Until xy.Length Step 2
 			Local ti:Int = (i/2)*3
 			Local x#,y#
@@ -410,6 +413,11 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 			_poly_xyz[ti] = x
 			_poly_xyz[ti+1] = y
 			_poly_xyz[ti+2] = 0
+			
+			_poly_colors[i*2] = _cr
+			_poly_colors[i*2+1] = _cg
+			_poly_colors[i*2+2] = _cb
+			_poly_colors[i*2+3] = _ca
 		Next
 		_buffer.AddVerticesEx(xy.Length, _poly_xyz, Null, _poly_colors)
 	End Method
