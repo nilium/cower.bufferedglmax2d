@@ -359,7 +359,34 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	End Method
 	
 	Method DrawOval(x0#, y0#, x1#, y1#, tx#, ty#)
-		RuntimeError("Not implemented")
+		Local dx# = (x1-x0)*.5
+		Local dy# = (y1-y0)*.5
+		
+		Local segments:Int = Max(dx, dy)*4 - 1
+		
+		If _poly_xyz.Length < segments*3 Then
+			_poly_xyz = New Float[segments*3]
+			_poly_colors = New Byte[segments*4]
+		EndIf
+		Local segToAngle# = 360#/Float(segments)
+		For Local i:Int = 0 Until segments
+			Local sdx# = Sin(i*segToAngle)*dx
+			Local cdy# = Cos(i*segToAngle)*dy
+			Local x# = x0+dx+sdx
+			Local y# = y0+dy+cdy
+			Local ci%=i*4
+			Local xyzi%=i*3
+			_poly_xyz[xyzi] = x*_txx + y*_txy + tx
+			_poly_xyz[xyzi+1] = y*_tyx + y*_tyy + ty
+			_poly_xyz[xyzi+2] = 0
+			_poly_colors[ci] = _cr
+			_poly_colors[ci+1] = _cg
+			_poly_colors[ci+2] = _cb
+			_poly_colors[ci+3] = _ca
+		Next
+		_buffer.SetMode(GL_POLYGON)
+		_buffer.SetTexture(0)
+		_buffer.AddVerticesEx(segments, _poly_xyz, Null, _poly_colors)
 	End Method
 	
 	Field _poly_xyz#[36]
