@@ -424,7 +424,7 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 			_poly_colors[i*2+2] = _cb
 			_poly_colors[i*2+3] = _ca
 		Next
-		_buffer.AddVerticesEx(xy.Length, _poly_xyz, Null, _poly_colors)
+		_buffer.AddVerticesEx(xy.Length/2, _poly_xyz, Null, _poly_colors)
 	End Method
 		
 	Method DrawPixmap(pixmap:TPixmap, x%, y%)
