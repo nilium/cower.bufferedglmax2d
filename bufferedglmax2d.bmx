@@ -227,6 +227,10 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 			MinimumTextureHeight = maxtexsize
 		EndIf
 		
+		If pixmap.format <> PF_RGBA8888 Then
+			pixmap = pixmap.Convert(PF_RGBA8888)
+		EndIf
+		
 		If maxtexsize <= Max(pixmap.width+4, pixmap.height+4) Then
 			Local resize# = Float(maxtexsize)/Max(pixmap.width, pixmap.height)+4
 			pixmap = ResizePixmap(pixmap, (pixmap.width+4)*resize, (pixmap.height+4)*resize)
@@ -311,6 +315,7 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	End Method
 	
 	Method SetViewport(x%, y%, w%, h%)
+		_buffer.SetScissorTest(Not (x=0 And y=0 And w=_r_width And h=_r_height), x, _r_height-(y+h), w, h)
 	End Method
 	
 	Method SetTransform(xx#, xy#, yx#, yy#) NoDebug
