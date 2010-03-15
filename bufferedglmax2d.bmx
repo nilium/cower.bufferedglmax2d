@@ -330,6 +330,7 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	End Method
 	
 	Method Cls()
+		_buffer.Reset()
 		glClear(GL_COLOR_BUFFER_BIT)'|GL_DEPTH_BUFFER_BIT)
 	End Method
 	
@@ -428,17 +429,30 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	End Method
 		
 	Method DrawPixmap(pixmap:TPixmap, x%, y%)
-		RuntimeError("Not implemented")
+		_buffer.Render()
+		_buffer.Reset()
+		glRasterPos2i(x, y)
+		glDrawPixels(pixmap.width, pixmap.height, GLFormatForPixmap(pixmap), GL_UNSIGNED_BYTE, pixmap.pixels)
 	End Method
 	
 	Method GrabPixmap:TPixmap(x%, y%, width%, height%)
 		_buffer.Render()
 		_buffer.Reset()
 		
-		' Do something here...
-		RuntimeError("Not implemented")
+		Local pix:TPixmap = TPixmap.Create(_r_width, _r_height, PF_RGBA8888, 4)
+		glReadPixels(0, 0, _r_height, _r_height, GL_RGBA, GL_UNSIGNED_BYTE, pix.pixels)
+		For Local px:Int = 0 Until pix.width
+			For Local uy:Int = 0 Until pix.height/2
+				Local upper:Int, lower:Int
+				Local ly% = pix.height-uy
+				upper = pix.ReadPixel(px, uy)
+				lower = pix.ReadPixel(px, ly)
+				pix.WritePixel(px, uy, lower)
+				pix.WritePixel(px, ly, upper)
+			Next
+		Next
 		
-		Return Null
+		Return pix
 	End Method
 	
 	Field _r_width#=640, _r_height#=480 ' dummy values
