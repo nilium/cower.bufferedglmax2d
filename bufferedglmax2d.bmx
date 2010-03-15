@@ -156,16 +156,16 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		Local y1xy:Float = y1*_txy
 		Local y1yy:Float = y1*_tyy
 		
-		_poly_xyz[0] = x0xx + y0xy + tx
-		_poly_xyz[1] = x0yx + y0yy + ty
-		_poly_xyz[3] = x1xx + y0xy + tx
-		_poly_xyz[4] = x1yx + y0yy + ty
-		_poly_xyz[6] = x0xx + y1xy + tx
-		_poly_xyz[7] = x0yx + y1yy + ty
-		_poly_xyz[9] = x1xx + y1xy + tx
-		_poly_xyz[10] = x1yx + y1yy + ty
+		_poly_xy[0] = x0xx + y0xy + tx
+		_poly_xy[1] = x0yx + y0yy + ty
+		_poly_xy[2] = x1xx + y0xy + tx
+		_poly_xy[3] = x1yx + y0yy + ty
+		_poly_xy[4] = x0xx + y1xy + tx
+		_poly_xy[5] = x0yx + y1yy + ty
+		_poly_xy[6] = x1xx + y1xy + tx
+		_poly_xy[7] = x1yx + y1yy + ty
 		
-		Return _poly_xyz
+		Return _poly_xy
 	End Method
 	
 	' TGraphicsDriver
@@ -294,8 +294,10 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		'haaaaaack (to make sure that if you specify a value greater than 1, unlike if you passed
 		' 2 and you would end up with some odd value between 0 and 1)
 		_ca=Min(Max(alpha, 0), 1)*255
-		For Local i:Int = 0 Until _poly_colors.Length Step 4
-			_poly_colors[i+3] = _ca
+		Local colorptr:Int Ptr = Int Ptr(Varptr _poly_colors[0])
+		Local curcolor:Int = Int Ptr(Varptr _cr)[0]
+		For Local i:Int = 0 Until _poly_colors.Length/4
+			colorptr[i] = curcolor
 		Next
 	End Method
 	
@@ -303,10 +305,10 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		_cr=Min(Max(r, 0), 255) 'haaaaaaaaaaaaaaaaaaaaaaaaack, same as above
 		_cg=Min(Max(g, 0), 255)
 		_cb=Min(Max(b, 0), 255)
-		For Local i:Int = 0 Until _poly_colors.Length Step 4
-			_poly_colors[i] = _cr
-			_poly_colors[i+1] = _cg
-			_poly_colors[i+2] = _cb
+		Local colorptr:Int Ptr = Int Ptr(Varptr _poly_colors[0])
+		Local curcolor:Int = Int Ptr(Varptr _cr)[0]
+		For Local i:Int = 0 Until _poly_colors.Length/4
+			colorptr[i] = curcolor
 		Next
 	End Method
 	
@@ -337,22 +339,19 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 	Method Plot(x#, y#)
 		_buffer.SetTexture(0)
 		_buffer.SetMode(GL_POINTS)
-		_poly_xyz[0] = x
-		_poly_xyz[1] = y
-		_poly_xyz[2] = 0
-		_buffer.AddVerticesEx(1, _poly_xyz, Null, _poly_colors)
+		_poly_xy[0] = x
+		_poly_xy[1] = y
+		_buffer.AddVerticesEx(1, _poly_xy, Null, _poly_colors)
 	End Method
 	
 	Method DrawLine(x0#, y0#, x1#, y1#, tx#, ty#)
 		_buffer.SetTexture(0)
 		_buffer.SetMode(GL_LINES)
-		_poly_xyz[0] = x0*_txx+y0*_txy+tx+.5
-		_poly_xyz[1] = x0*_tyx+y0*_tyy-1+ty+.5
-		_poly_xyz[2] = 0
-		_poly_xyz[3] = x1*_txx+y1*_txy+tx+.5
-		_poly_xyz[4] = x1*_tyx+y1*_tyy-1+ty+.5
-		_poly_xyz[5] = 0
-		_buffer.AddVerticesEx(2, _poly_xyz, Null, _poly_colors)
+		_poly_xy[0] = x0*_txx+y0*_txy+tx+.5
+		_poly_xy[1] = x0*_tyx+y0*_tyy-1+ty+.5
+		_poly_xy[2] = x1*_txx+y1*_txy+tx+.5
+		_poly_xy[3] = x1*_tyx+y1*_tyy-1+ty+.5
+		_buffer.AddVerticesEx(2, _poly_xy, Null, _poly_colors)
 	End Method
 	
 	Method DrawRect(x0#, y0#, x1#, y1#, tx#, ty#)
@@ -370,41 +369,39 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		
 		Local segments:Int = Max(dx, dy)*4 - 1
 		
-		If _poly_xyz.Length < segments*3 Then
-			_poly_xyz = New Float[segments*3]
+		If _poly_xy.Length < segments*2 Then
+			_poly_xy = New Float[segments*2]
 			_poly_colors = New Byte[segments*4]
 		EndIf
 		Local segToAngle# = 360#/Float(segments)
+		Local colorptr:Int Ptr = Int Ptr(Varptr _poly_colors[0])
+		Local curcolor:Int = Int Ptr(Varptr _cr)[0]
 		For Local i:Int = 0 Until segments
 			Local sdx# = Sin(i*segToAngle)*dx
 			Local cdy# = Cos(i*segToAngle)*dy
 			Local x# = x0+dx+sdx
 			Local y# = y0+dy+cdy
-			Local ci%=i*4
-			Local xyzi%=i*3
-			_poly_xyz[xyzi] = x*_txx + y*_txy + tx
-			_poly_xyz[xyzi+1] = y*_tyx + y*_tyy + ty
-			_poly_xyz[xyzi+2] = 0
-			_poly_colors[ci] = _cr
-			_poly_colors[ci+1] = _cg
-			_poly_colors[ci+2] = _cb
-			_poly_colors[ci+3] = _ca
+			Local xyzi%=i*2
+			_poly_xy[xyzi] = x*_txx + y*_txy + tx
+			_poly_xy[xyzi+1] = y*_tyx + y*_tyy + ty
+			colorptr[i] = curcolor
 		Next
 		_buffer.SetMode(GL_POLYGON)
 		_buffer.SetTexture(0)
-		_buffer.AddVerticesEx(segments, _poly_xyz, Null, _poly_colors)
+		_buffer.AddVerticesEx(segments, _poly_xy, Null, _poly_colors)
 	End Method
 	
-	Field _poly_xyz#[36]
+	Field _poly_xy#[36]
 	Field _poly_colors:Byte[36]
 	Method DrawPoly(xy#[], handlex#, handley#, originx#, originy#)
 		_buffer.SetTexture(0)
 		_buffer.SetMode(GL_POLYGON)
 		
-		If _poly_xyz.Length/3 < xy.Length/2 Then
-			_poly_xyz = New Float[Min(xy.Length/2,12)*3]
+		If _poly_colors.Length/2 < xy.Length Then
 			_poly_colors = New Byte[Min(xy.Length,24)*2]
 		EndIf
+		Local colorptr:Int Ptr = Int Ptr(Varptr _poly_colors[0])
+		Local curcolor:Int = Int Ptr(Varptr _cr)[0]
 		For Local i:Int = 0 Until xy.Length Step 2
 			Local ti:Int = (i/2)*3
 			Local x#,y#
@@ -416,16 +413,9 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 			x = (x * _txx) + (y * _txy) + originx
 			y = (x * _tyx) + (y * _tyy) + originy
 			
-			_poly_xyz[ti] = x
-			_poly_xyz[ti+1] = y
-			_poly_xyz[ti+2] = 0
-			
-			_poly_colors[i*2] = _cr
-			_poly_colors[i*2+1] = _cg
-			_poly_colors[i*2+2] = _cb
-			_poly_colors[i*2+3] = _ca
+			colorptr[i/2] = curcolor
 		Next
-		_buffer.AddVerticesEx(xy.Length/2, _poly_xyz, Null, _poly_colors)
+		_buffer.AddVerticesEx(xy.Length/2, xy, Null, _poly_colors)
 	End Method
 		
 	Method DrawPixmap(pixmap:TPixmap, x%, y%)
