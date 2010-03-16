@@ -268,7 +268,23 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		Return New TGLBufferedImageFrame.Init(buffer)
 	End Method
 	
+	Global __blend_funcs:Int[]=[..
+		GL_ONE, GL_ZERO, GL_GEQUAL, 1, ..
+		GL_ONE, GL_ZERO, GL_ALWAYS, 0, ..
+		GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ALWAYS, 0, ..
+		GL_SRC_ALPHA, GL_ONE, GL_ALWAYS, 0, ..
+		GL_DST_COLOR, GL_ZERO, GL_ALWAYS, 0]
+	Field _blend:Int=-1
 	Method SetBlend(blend%)
+		Assert 0 < blend And blend <= SHADEBLEND Else "Invalid blendmode specified"
+		If blend=_blend Then
+			Return
+		EndIf
+		_blend = blend
+		blend = (blend-1)*4
+		_buffer.SetBlendFunc(__blend_funcs[blend], __blend_funcs[blend+1])
+		_buffer.SetAlphaFunc(__blend_funcs[blend+2], __blend_funcs[blend+3]*.5)
+		Rem
 		Select blend
 			Case MASKBLEND
 				_buffer.SetBlendFunc(GL_ONE, GL_ZERO)
@@ -288,31 +304,47 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 			Default
 				RuntimeError "Invalid blendmode specified: "+blend
 		End Select
+		EndRem
 	End Method
 	
 	Method SetAlpha(alpha#) NoDebug
 		'haaaaaack (to make sure that if you specify a value greater than 1, unlike if you passed
 		' 2 and you would end up with some odd value between 0 and 1)
+		Local lascolor:Int = Int Ptr(Varptr _cr)[0]
 		_ca=Min(Max(alpha, 0), 1)*255
-		Local colorptr:Int Ptr = Int Ptr(Varptr _poly_colors[0])
 		Local curcolor:Int = Int Ptr(Varptr _cr)[0]
+		If lascolor=curcolor Then
+			Return
+		EndIf
+		Local colorptr:Int Ptr = Int Ptr(Varptr _poly_colors[0])
 		For Local i:Int = 0 Until _poly_colors.Length/4
 			colorptr[i] = curcolor
 		Next
 	End Method
 	
 	Method SetColor(r%, g%, b%) NoDebug
+		Local lascolor:Int = Int Ptr(Varptr _cr)[0]
 		_cr=Min(Max(r, 0), 255) 'haaaaaaaaaaaaaaaaaaaaaaaaack, same as above
 		_cg=Min(Max(g, 0), 255)
 		_cb=Min(Max(b, 0), 255)
-		Local colorptr:Int Ptr = Int Ptr(Varptr _poly_colors[0])
 		Local curcolor:Int = Int Ptr(Varptr _cr)[0]
+		If lascolor=curcolor Then
+			Return
+		EndIf
+		Local colorptr:Int Ptr = Int Ptr(Varptr _poly_colors[0])
 		For Local i:Int = 0 Until _poly_colors.Length/4
 			colorptr[i] = curcolor
 		Next
 	End Method
 	
-	Method SetClsColor(r%, g%, b%)
+	Field _clr_r%, _clr_g%, _clr_b%
+	Method SetClsColor(r%, g%, b%) NoDebug
+		If _clr_r=r And _clr_g=g And _clr_b=b Then
+			Return
+		EndIf
+		_clr_r=r
+		_clr_g=g
+		_clr_b=b
 		glClearColor(r/255#, g/255#, b/255#, 1.0)
 	End Method
 	
@@ -327,11 +359,11 @@ Type TBufferedGLMax2DDriver Extends TMax2DDriver
 		_tyy = yy
 	End Method
 	
-	Method SetLineWidth(width#)
+	Method SetLineWidth(width#) NoDebug
 		_buffer.SetLineWidth(width)
 	End Method
 	
-	Method Cls()
+	Method Cls() NoDebug
 		_buffer.Reset()
 		glClear(GL_COLOR_BUFFER_BIT)'|GL_DEPTH_BUFFER_BIT)
 	End Method
